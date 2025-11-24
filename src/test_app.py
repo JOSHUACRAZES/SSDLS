@@ -31,7 +31,6 @@ def client(tmp_path, monkeypatch):
     with app.test_client() as client:
         yield client
 
-
 # ----- TESTS -----
 
 def test_get_all_users(client):
@@ -43,7 +42,6 @@ def test_get_all_users(client):
     assert len(data) == 2
     assert data[0][1] in ("alice", "bob")
 
-
 def test_get_user_by_username(client):
     """Should return a specific user."""
     response = client.get("/users?username=alice")
@@ -52,7 +50,6 @@ def test_get_user_by_username(client):
     data = response.get_json()
     assert len(data) == 1
     assert data[0][1] == "alice"
-
 
 def test_sql_injection_safe(client):
     """
