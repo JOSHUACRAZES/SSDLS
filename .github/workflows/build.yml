@@ -10,10 +10,12 @@ on:
 jobs:
   build-and-test:
     name: Run Unit Tests and Generate Coverage Report
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
 
     steps:
-      - uses: actions/checkout@v4  # Checkout the repository code
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -25,21 +27,22 @@ jobs:
           python -m pip install --upgrade pip
           pip install Flask
           pip install -r requirements.txt || true
-          pip install pytest pytest-cov  # Ensure pytest-cov is installed
+          pip install pytest pytest-cov  # Install pytest-cov for coverage reporting
 
       - name: Run pytest with coverage
         run: |
-          pytest --cov=src --cov-report=lcov -v  # Generate the coverage report
-          cat coverage.lcov  # Print out the coverage report for debugging purposes
+          pytest --cov=src --cov-report=lcov -v  # Run pytest and generate coverage report
+          cat coverage.lcov  # Debugging: print the contents of coverage.lcov to check if it's generated correctly
 
   sonarqube:
     name: SonarQube Scan
-    runs-on: ubuntu-latest
-    needs: build-and-test
+    runs-on: windows-latest
+    needs: build-and-test  # This ensures SonarQube scan runs only after the tests are successful
+
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Ensure full history is fetched for SonarQube analysis
+          fetch-depth: 0  # Ensures full history is fetched for SonarQube analysis
 
       - name: SonarQube Scan
         uses: SonarSource/sonarqube-scan-action@v6
@@ -48,7 +51,7 @@ jobs:
         with:
           extra-properties: |
             sonar.projectKey=your-project-key  # Replace with your SonarQube project key
-            sonar.sources=src  # Path to your source code folder (adjust as needed)
-            sonar.python.coverage.reportPaths=coverage.lcov  # Ensure path to the coverage report is correct
+            sonar.sources=src  # Adjust to the correct source folder if needed
+            sonar.python.coverage.reportPaths=coverage.lcov  # Path to the coverage report
             sonar.coverage.exclusions=**/*test*.py  # Optionally exclude test files from coverage calculation
-            sonar.cpd.exclusions=**/*test*.py  # Optionally exclude test files from duplication analysis
+            sonar.cpd.exclusions=**/*test*.py  # Optionally exclude test files from code duplication analysis
