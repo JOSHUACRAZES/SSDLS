@@ -47,6 +47,7 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         with:
           extra-properties: |
-            sonar.projectKey=your-project-key       # Replace with your SonarQube project key
-            sonar.sources=src                        # Adjust source folder if necessary
+            sonar.projectKey=your-project-key  # Replace with your SonarQube project key
+            sonar.sources=src                    # Adjust source folder if necessary
             sonar.python.coverage.reportPaths=coverage.lcov  # Path to the coverage report
+            sonar.python.coverage.reportPaths=coverage.lcov  # Ensure the correct path to the lcov file
