@@ -1,57 +1,70 @@
 import os
 import sqlite3
-import unittest
-from app import app
+import pytest
+from app import app, get_db_connection
 
-class TestGetUsers(unittest.TestCase):
+# ----- FIXTURES -----
 
-    @classmethod
-    def setUpClass(cls):
-        # Create a temporary test database
-        cls.test_db = "users.db"
-        conn = sqlite3.connect(cls.test_db)
-        cursor = conn.cursor()
+@pytest.fixture
+def client(tmp_path, monkeypatch):
+    """
+    Creates a temporary SQLite database for testing
+    and overrides the app DB connection to use it.
+    """
+    test_db = tmp_path / "test_users.db"
 
-        cursor.execute("DROP TABLE IF EXISTS users")
-        cursor.execute("""
-            CREATE TABLE users (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                username TEXT,
-                email TEXT
-            )
-        """)
+    # Create test DB schema + seed data
+    conn = sqlite3.connect(test_db)
+    cursor = conn.cursor()
+    cursor.execute("CREATE TABLE users (id INTEGER PRIMARY KEY, username TEXT)")
+    cursor.execute("INSERT INTO users (username) VALUES ('alice')")
+    cursor.execute("INSERT INTO users (username) VALUES ('bob')")
+    conn.commit()
+    conn.close()
 
-        # Insert mock data
-        cursor.execute("INSERT INTO users (username, email) VALUES ('alice', 'alice@example.com')")
-        cursor.execute("INSERT INTO users (username, email) VALUES ('bob', 'bob@example.com')")
+    # Patch DB connection function
+    def test_db_connection():
+        return sqlite3.connect(test_db)
 
-        conn.commit()
-        conn.close()
+    monkeypatch.setattr("app.get_db_connection", test_db_connection)
 
-        # Configure Flask test client
-        app.testing = True
-        cls.client = app.test_client()
+    with app.test_client() as client:
+        yield client
 
-    @classmethod
-    def tearDownClass(cls):
-        # Clean up test DB
-        if os.path.exists(cls.test_db):
-            os.remove(cls.test_db)
 
-    def test_get_users_valid(self):
-        response = self.client.get("/users?username=alice")
-        self.assertEqual(response.status_code, 200)
-        self.assertIn("alice", response.data.decode())
+# ----- TESTS -----
 
-    def test_get_users_no_match(self):
-        response = self.client.get("/users?username=nonexistent")
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data.decode(), "[]")
+def test_get_all_users(client):
+    """Should return all users as JSON."""
+    response = client.get("/users")
+    assert response.status_code == 200
+    
+    data = response.get_json()
+    assert len(data) == 2
+    assert data[0][1] in ("alice", "bob")
 
-    def test_get_users_missing_param(self):
-        response = self.client.get("/users")
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data.decode(), "[]")
 
-if __name__ == "__main__":
-    unittest.main()
+def test_get_user_by_username(client):
+    """Should return a specific user."""
+    response = client.get("/users?username=alice")
+    assert response.status_code == 200
+
+    data = response.get_json()
+    assert len(data) == 1
+    assert data[0][1] == "alice"
+
+
+def test_sql_injection_safe(client):
+    """
+    Ensures parameterized query prevents SQL injection.
+    Injection attempt should return zero rows, not drop table.
+    """
+    malicious_input = "alice' OR '1'='1"
+    response = client.get(f"/users?username={malicious_input}")
+
+    assert response.status_code == 200
+    
+    data = response.get_json()
+    assert data == []  # No injection should succeed
+
+
