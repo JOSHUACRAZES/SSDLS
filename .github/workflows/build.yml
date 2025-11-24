@@ -13,8 +13,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -27,13 +26,16 @@ jobs:
           pip install -r requirements.txt || true
           pip install pytest
 
+      - name: Add project root to PYTHONPATH
+        run: echo "PYTHONPATH=$PYTHONPATH:$(pwd)" >> $GITHUB_ENV
+
       - name: Run pytest
-        run: pytest -q
+        run: pytest -v
 
   sonarqube:
     name: SonarQube Scan
     runs-on: ubuntu-latest
-    needs: build-and-test  # ❗Runs sonar AFTER tests pass
+    needs: build-and-test  # ❗ Runs sonar AFTER tests pass
 
     steps:
       - uses: actions/checkout@v4
