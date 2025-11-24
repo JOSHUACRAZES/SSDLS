@@ -9,7 +9,7 @@ on:
 
 jobs:
   build-and-test:
-    name: Run Unit Tests
+    name: Run Unit Tests and Generate Coverage Report
     runs-on: ubuntu-latest
 
     steps:
@@ -25,19 +25,15 @@ jobs:
           python -m pip install --upgrade pip
           pip install Flask
           pip install -r requirements.txt || true
-          pip install pytest
+          pip install pytest pytest-cov
 
-      - name: Add project root to PYTHONPATH
-        run: echo "PYTHONPATH=$PYTHONPATH:$(pwd)" >> $GITHUB_ENV
-
-      - name: Run pytest
-        run: pytest -v
+      - name: Run pytest with coverage
+        run: pytest --cov=src --cov-report=lcov -v
 
   sonarqube:
     name: SonarQube Scan
     runs-on: ubuntu-latest
-    needs: build-and-test  # ❗ Runs sonar AFTER tests pass
-
+    needs: build-and-test
     steps:
       - uses: actions/checkout@v4
         with:
@@ -47,3 +43,7 @@ jobs:
         uses: SonarSource/sonarqube-scan-action@v6
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_SCANNER_PARAMS: |
+            -Dsonar.projectKey=your-project-key
+            -Dsonar.sources=src
+            -Dsonar.python.coverage.reportPaths=coverage.lcov  # Path to the coverage report
