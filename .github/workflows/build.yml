@@ -16,7 +16,7 @@ jobs:
       # Step 1: Checkout the repository
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Full history is required for SonarQube analysis
+          fetch-depth: 0  # Full history for SonarQube analysis
 
       # Step 2: Set up Python
       - name: Set up Python
@@ -24,27 +24,30 @@ jobs:
         with:
           python-version: '3.12'
 
-      # Step 3: Install dependencies and run unit tests with coverage
+      # Step 3: Install dependencies and run tests with coverage
       - name: Install dependencies and Run Unit Tests with Coverage
         run: |
           pip install flask pytest pytest-cov
-          python -m pytest src/test_app.py --cov=src --cov-report=xml -v  # Run tests and generate coverage report in XML
+          python -m pytest src/test_app.py --cov=src --cov-report=xml:coverage.xml -v
 
-      # Step 4: SonarQube Scan
+      # Step 4: SonarQube Scan (runs AFTER coverage step)
       - name: SonarQube Scan
         uses: SonarSource/sonarqube-scan-action@v6
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         with:
           extra-properties: |
-            sonar.projectKey=JOSHUACRAZES_SSDLS  # Your project key
-            sonar.organization=joshuacrazes  # Your SonarCloud organization
-            sonar.sources=src  # Point to src folder where your code resides
-            sonar.python.coverage.reportPaths=coverage.xml  # Path to coverage report generated in Step 3
-            sonar.coverage.exclusions=**/*test*.py  # Exclude test files from coverage calculation
-            sonar.cpd.exclusions=**/*test*.py  # Exclude test files from code duplication analysis
-            sonar.verbose=true  # Enable verbose logging for SonarQube scan
+            sonar.projectKey=JOSHUACRAZES_SSDLS
+            sonar.organization=joshuacrazes
+            sonar.sources=src
+            sonar.python.coverage.reportPaths=coverage.xml
+            sonar.coverage.exclusions=**/*test*.py
+            sonar.cpd.exclusions=**/*test*.py
+            sonar.verbose=true
 
-      
+      # Step 5: Docker Push (optional, after analysis and tests)
+      - name: Build and Push Docker Image
+        run: |
+          docker build -t myapp:latest .
           docker tag myapp:latest ${{ secrets.DOCKER_USERNAME }}/myapp:latest
           docker push ${{ secrets.DOCKER_USERNAME }}/myapp:latest
