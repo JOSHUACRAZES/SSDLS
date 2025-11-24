@@ -28,7 +28,9 @@ jobs:
           pip install pytest pytest-cov
 
       - name: Run pytest with coverage
-        run: pytest --cov=src --cov-report=lcov -v
+        run: |
+          pytest --cov=src --cov-report=lcov -v
+          cat coverage.lcov  # Debugging: Print coverage report to ensure it's generated
 
   sonarqube:
     name: SonarQube Scan
@@ -43,7 +45,8 @@ jobs:
         uses: SonarSource/sonarqube-scan-action@v6
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SONAR_SCANNER_PARAMS: |
-            -Dsonar.projectKey=your-project-key
-            -Dsonar.sources=src
-            -Dsonar.python.coverage.reportPaths=coverage.lcov  # Path to the coverage report
+        with:
+          extra-properties: |
+            sonar.projectKey=your-project-key       # Replace with your SonarQube project key
+            sonar.sources=src                        # Adjust source folder if necessary
+            sonar.python.coverage.reportPaths=coverage.lcov  # Path to the coverage report
