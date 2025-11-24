@@ -1,7 +1,7 @@
 import os
 import sqlite3
 import pytest
-from app import app, get_db_connection
+from main import app, get_db_connection
 
 # ----- FIXTURES -----
 
@@ -26,7 +26,7 @@ def client(tmp_path, monkeypatch):
     def test_db_connection():
         return sqlite3.connect(test_db)
 
-    monkeypatch.setattr("app.get_db_connection", test_db_connection)
+    monkeypatch.setattr("main.get_db_connection", test_db_connection)
 
     with app.test_client() as client:
         yield client
@@ -66,5 +66,3 @@ def test_sql_injection_safe(client):
     
     data = response.get_json()
     assert data == []  # No injection should succeed
-
-
