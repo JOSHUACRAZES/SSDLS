@@ -23,7 +23,7 @@ jobs:
         with:
           python-version: '3.12'
 
-      # Step 3: Install Flask and dependencies, start your app in background
+      # Step 3: Install Flask and dependencies, then start your app in background
       - name: Install dependencies and start app
         run: |
           pip install flask
@@ -33,7 +33,7 @@ jobs:
       - name: Wait for Flask API
         run: sleep 10
 
-      # Step 5: Run OWASP ZAP Full Scan
+      # Step 5: Run OWASP ZAP Full Scan (generates zap_report.html)
       - name: OWASP ZAP Full Scan
         uses: zaproxy/action-full-scan@v0.8.0
         with:
@@ -42,10 +42,9 @@ jobs:
           rules_file_name: ''
           cmd_options: '-g zap_report.html'
 
-      # Step 6: Upload ZAP report as artifact
+      # Step 6: Upload ZAP report as artifact (uses latest v4)
       - name: Upload ZAP Report
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ZAP-DAST-Report
           path: zap_report.html
-
