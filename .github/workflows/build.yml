@@ -1,4 +1,4 @@
-name: Build
+name: Build and Scan
 
 on:
   push:
@@ -9,28 +9,28 @@ on:
 
 jobs:
   build-and-scan:
-    name: Unit Tests + SonarQube + Docker
+    name: Unit Tests + SonarQube + Docker Build
     runs-on: ubuntu-latest
 
     steps:
-      # Step 1: Checkout the repository
+      # Checkout repository
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Full history for SonarQube analysis
+          fetch-depth: 0
 
-      # Step 2: Set up Python
+      # Set up Python
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.12'
 
-      # Step 3: Install dependencies and run tests with coverage
+      # Install dependencies and run tests with coverage
       - name: Install dependencies and Run Unit Tests with Coverage
         run: |
           pip install flask pytest pytest-cov
           python -m pytest src/test_app.py --cov=src --cov-report=xml:coverage.xml -v
 
-      # Step 4: SonarQube Scan (runs AFTER coverage step)
+      # SonarQube Scan
       - name: SonarQube Scan
         uses: SonarSource/sonarqube-scan-action@v6
         env:
@@ -45,9 +45,7 @@ jobs:
             sonar.cpd.exclusions=**/*test*.py
             sonar.verbose=true
 
-      # Step 5: Docker Push (optional, after analysis and tests)
-      - name: Build and Push Docker Image
+      # Build Docker Image only (no push)
+      - name: Build Docker Image
         run: |
-          docker build -t myapp:latest .
-          docker tag myapp:latest ${{ secrets.DOCKER_USERNAME }}/myapp:latest
-          docker push ${{ secrets.DOCKER_USERNAME }}/myapp:latest
+          docker build -t cavinjoshua/myapp:latest .
