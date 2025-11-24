@@ -40,3 +40,4 @@ jobs:
           target: 'http://localhost:5000/'
           allow_issue_writing: false
           rules_file_name: ''
+          artifact_name: 'zap-scan'  # Use only valid characters (letters, numbers, -, _)
