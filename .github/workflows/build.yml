@@ -8,38 +8,51 @@ on:
     types: [opened, synchronize, reopened]
 
 jobs:
-  build-and-scan:
-    name: Unit Tests + SonarQube + Docker
-    runs-on: ubuntu-latest
+  build-and-test:
+    name: Run Unit Tests and Generate Coverage Report
+    runs-on: windows-latest
 
     steps:
-      # Step 1: Checkout repo
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Full history is required for SonarQube analysis
+          fetch-depth: 0
 
-      # Step 2: Set up Python
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: '3.10'
 
-      # Step 3: Install dependencies and run unit tests with coverage
-      - name: Install dependencies and Run Unit Tests with Coverage
+      - name: Install dependencies
         run: |
-          pip install flask pytest pytest-cov
-          python -m pytest src/test_app.py --cov=src --cov-report=xml -v  
-          
-      # Run tests and generate coverage report in XML
+          python -m pip install --upgrade pip
+          pip install Flask
+          pip install pytest pytest-cov
 
-      # Step 4: SonarQube Scan
+      - name: Run pytest with coverage
+        run: |
+          # Measure coverage for code in src folder
+          pytest --cov=src --cov-report=lcov -v
+          # Debug: ensure coverage file exists
+          cat coverage.lcov
+
+  sonarqube:
+    name: SonarQube Scan
+    runs-on: windows-latest
+    needs: build-and-test
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
       - name: SonarQube Scan
         uses: SonarSource/sonarqube-scan-action@v6
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         with:
-          args: >
-            -Dsonar.python.coverage.reportPaths=coverage.xml  # Path to coverage report generated in Step 3
-            -Dsonar.sources=src  # Analyze files in the 'src' directory
-
-     
+          extra-properties: |
+            sonar.projectKey=your-project-key
+            sonar.sources=src  # Point to src folder
+            sonar.python.coverage.reportPaths=coverage.lcov
+            sonar.coverage.exclusions=**/*test*.py
+            sonar.cpd.exclusions=**/*test*.py
