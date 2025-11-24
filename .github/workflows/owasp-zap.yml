@@ -1,34 +1,44 @@
 name: OWASP ZAP Dynamic Scan
 
 on:
-  workflow_dispatch:  # Allows manual triggering. Use 'push' if you want automatic scan on code changes.
+  workflow_dispatch:  # Allows you to run the scan manually; use 'push' if you want it on every code change
 
 jobs:
   zap_scan:
     runs-on: ubuntu-latest
 
     steps:
-      # Step 1: Checkout your code
+      # Checkout your code
       - uses: actions/checkout@v4
 
-      # Step 2: Set up Python
+      # Set up Python
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.12'
 
-      # Step 3: Install Flask and project dependencies
-      - name: Install Dependencies
+      # Install Flask and dependencies
+      - name: Install dependencies
         run: |
           pip install flask
           nohup python src/main.py &
 
-      # Step 4: Wait for app to start
+      # Wait for app to be ready
       - name: Wait for Flask API
         run: sleep 10
 
-      # Step 5: Run OWASP ZAP Full Scan against local server
+      # Run OWASP ZAP Full Scan
       - name: OWASP ZAP Full Scan
         uses: zaproxy/action-full-scan@v0.8.0
         with:
           target: 'http://localhost:5000/'
+          allow_issue_writing: false
+          rules_file_name: ''
+          cmd_options: '-g zap_report.html'
+
+      # Upload ZAP HTML report as artifact (so you can download it from GitHub Actions)
+      - name: Upload ZAP Report
+        uses: actions/upload-artifact@v3
+        with:
+          name: ZAP-DAST-Report
+          path: zap_report.html
