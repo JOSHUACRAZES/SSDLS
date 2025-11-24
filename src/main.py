@@ -13,7 +13,7 @@ def get_users():
     conn = get_db_connection()
     cursor = conn.cursor()
 
-    # ✔ SAFE parameterized SQL query (prevents SQL injection)
+    # Parameterized SQL query (prevents SQL injection)
     if username:
         cursor.execute("SELECT * FROM users WHERE username = ?", (username,))
     else:
