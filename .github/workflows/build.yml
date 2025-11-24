@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4  # Checkout the repository code
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -25,12 +25,12 @@ jobs:
           python -m pip install --upgrade pip
           pip install Flask
           pip install -r requirements.txt || true
-          pip install pytest pytest-cov
+          pip install pytest pytest-cov  # Ensure pytest-cov is installed
 
       - name: Run pytest with coverage
         run: |
-          pytest --cov=src --cov-report=lcov -v
-          cat coverage.lcov  # Debugging: Print coverage report to ensure it's generated
+          pytest --cov=src --cov-report=lcov -v  # Generate the coverage report
+          cat coverage.lcov  # Print out the coverage report for debugging purposes
 
   sonarqube:
     name: SonarQube Scan
@@ -39,7 +39,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          fetch-depth: 0  # Ensure full history is fetched for SonarQube analysis
 
       - name: SonarQube Scan
         uses: SonarSource/sonarqube-scan-action@v6
@@ -48,7 +48,7 @@ jobs:
         with:
           extra-properties: |
             sonar.projectKey=your-project-key  # Replace with your SonarQube project key
-            sonar.sources=src                    # Adjust source folder if necessary
-            sonar.python.coverage.reportPaths=coverage.lcov  # Path to the coverage report
-            sonar.coverage.exclusions=**/*test*.py  # Exclude test files from coverage calculation (optional)
-            sonar.cpd.exclusions=**/*test*.py  # Exclude test files from Code Duplication analysis (optional)
+            sonar.sources=src  # Path to your source code folder (adjust as needed)
+            sonar.python.coverage.reportPaths=coverage.lcov  # Ensure path to the coverage report is correct
+            sonar.coverage.exclusions=**/*test*.py  # Optionally exclude test files from coverage calculation
+            sonar.cpd.exclusions=**/*test*.py  # Optionally exclude test files from duplication analysis
